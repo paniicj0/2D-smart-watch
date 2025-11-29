@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="SmartWatch.vcxproj" />
+  <Project Path="SmartWatch.vcxproj" Id="b215024c-0653-47b4-adcb-03005cda0787" />
 </Solution>
