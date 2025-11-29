@@ -1,0 +1,18 @@
+# Visual Studio
+.vs/
+SmartWatch/.vs/
+SmartWatchOpenGL/.vs/
+*.vcxproj.user
+
+# Build output
+Debug/
+Release/
+x64/
+ipch/
+
+# Ostalo
+*.log
+*.obj
+*.pdb
+*.ilk
+*.exe
