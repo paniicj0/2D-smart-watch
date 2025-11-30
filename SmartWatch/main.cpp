@@ -1,12 +1,7 @@
-﻿#include <iostream>
-#include <thread>
-#include <chrono>
-
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+﻿#include "App.h"
 
 int main() {
-    // 1) Init GLFW
+    // === 1) Inicijalizacija GLFW ===
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
         return -1;
@@ -17,24 +12,12 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    // 2) Fullscreen na primarnom monitoru
+    // Fullscreen na primarnom monitoru
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
-    if (!monitor || !mode) {
-        std::cerr << "Failed to get primary monitor or video mode\n";
-        glfwTerminate();
-        return -1;
-    }
-
-    GLFWwindow* window = glfwCreateWindow(
-        mode->width,
-        mode->height,
-        "2D Smart Watch",
-        monitor,    // fullscreen
-        nullptr
-    );
-
+    GLFWwindow* window = glfwCreateWindow(mode->width, mode->height,
+        "SmartWatch", monitor, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
         glfwTerminate();
@@ -43,10 +26,7 @@ int main() {
 
     glfwMakeContextCurrent(window);
 
-    // Isključimo VSync, sami ćemo ograničiti FPS na 75
-    glfwSwapInterval(0);
-
-    // 3) Init GLAD
+    // === 2) GLAD ===
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD\n";
         glfwDestroyWindow(window);
@@ -54,42 +34,40 @@ int main() {
         return -1;
     }
 
-    // Podesi viewport (ceo ekran)
+    // VSYNC off (pošto imamo naš frame limiter)
+    glfwSwapInterval(0);
+
+    // viewport
     glViewport(0, 0, mode->width, mode->height);
 
-    // Target: 75 FPS -> ~13.333 ms po frejmu
-    const double targetFrameTime = 1.0 / 75.0;
+    // === 3) Naš OpenGL setup (šejderi, VAO/VBO...) ===
+    initGL();
 
-    // 4) Glavna petlja
+    // === 4) Glavna petlja sa frame limiterom 75 FPS ===
+    const double TARGET_FPS = 75.0;
+    const double TARGET_FRAME_TIME = 1.0 / TARGET_FPS;
+
     while (!glfwWindowShouldClose(window)) {
         double frameStart = glfwGetTime();
 
-        // ESC za izlaz
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-            glfwSetWindowShouldClose(window, true);
-        }
-
-        // crna pozadina
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        // >>> OVDE ĆE POSLE IĆI CRTANJE EKRANA PAMETNOG SATA <<<
+        // input + logika + crtanje
+        updateAndRender(window);
 
         glfwSwapBuffers(window);
-        glfwPollEvents();
 
-        // Frame limiter na ~75 FPS
+        // limiter
         double frameEnd = glfwGetTime();
-        double frameDuration = frameEnd - frameStart;
+        double frameTime = frameEnd - frameStart;
 
-        if (frameDuration < targetFrameTime) {
-            double remaining = targetFrameTime - frameDuration;
-            std::this_thread::sleep_for(
-                std::chrono::duration<double>(remaining)
-            );
+        if (frameTime < TARGET_FRAME_TIME) {
+            double sleepTime = TARGET_FRAME_TIME - frameTime;
+            while (glfwGetTime() - frameEnd < sleepTime) {
+                // busy wait – dovoljno za projekat
+            }
         }
     }
 
+    // === 5) Čišćenje ===
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
