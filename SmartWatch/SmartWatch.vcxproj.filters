@@ -43,6 +43,9 @@
     <Filter Include="Libs\glad\include\KHR">
       <UniqueIdentifier>{fdc25789-a9ff-41ab-ba2e-c61b1d8885c6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{69b7d193-37a6-402e-8607-cd73922102a1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\..\..\glfw-3.4.bin.WIN64\include\GLFW\glfw3.h">
@@ -56,6 +59,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\..\..\include\KHR\khrplatform.h">
       <Filter>Libs\glad\include\KHR</Filter>
+    </ClInclude>
+    <ClInclude Include="App.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -73,6 +79,9 @@
       <Filter>Libs\glad\src</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="App.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -23,6 +23,7 @@
     <ClInclude Include="..\..\..\..\..\..\..\glfw-3.4.bin.WIN64\include\GLFW\glfw3native.h" />
     <ClInclude Include="..\..\..\..\..\..\..\include\glad\glad.h" />
     <ClInclude Include="..\..\..\..\..\..\..\include\KHR\khrplatform.h" />
+    <ClInclude Include="App.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\..\..\..\glfw-3.4.bin.WIN64\lib-vc2022\glfw3.dll" />
@@ -32,6 +33,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\..\..\src\glad.c" />
+    <ClCompile Include="App.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
