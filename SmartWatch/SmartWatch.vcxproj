@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\..\..\..\Downloads\stb_image.h" />
     <ClInclude Include="..\..\..\..\..\..\..\glfw-3.4.bin.WIN64\include\GLFW\glfw3.h" />
     <ClInclude Include="..\..\..\..\..\..\..\glfw-3.4.bin.WIN64\include\GLFW\glfw3native.h" />
     <ClInclude Include="..\..\..\..\..\..\..\include\glad\glad.h" />
@@ -35,6 +36,9 @@
     <ClCompile Include="..\..\..\..\..\..\..\src\glad.c" />
     <ClCompile Include="App.cpp" />
     <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resource Files\ekg.jpg" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
@@ -95,7 +99,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Libs\glad\include;$(ProjectDir)Libs\glfw\include;$(SolutionDir)Libs\glad\include;$(SolutionDir)Libs\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Libs\glad\include;$(ProjectDir)Libs\glfw\include;$(SolutionDir)Libs\glad\include;$(SolutionDir)Libs\glfw\include;%(AdditionalIncludeDirectories);$(ProjectDir);$(ProjectDir)Header</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -113,7 +117,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Libs\glad\include;$(ProjectDir)Libs\glfw\include;$(SolutionDir)Libs\glad\include;$(SolutionDir)Libs\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Libs\glad\include;$(ProjectDir)Libs\glfw\include;$(SolutionDir)Libs\glad\include;$(SolutionDir)Libs\glfw\include;%(AdditionalIncludeDirectories);$(ProjectDir);$(ProjectDir)Header</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,7 +133,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Libs\glad\include;$(ProjectDir)Libs\glfw\include;$(SolutionDir)Libs\glad\include;$(SolutionDir)Libs\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Libs\glad\include;$(ProjectDir)Libs\glfw\include;$(SolutionDir)Libs\glad\include;$(SolutionDir)Libs\glfw\include;%(AdditionalIncludeDirectories);$(ProjectDir);$(ProjectDir)Header</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,7 +151,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Libs\glad\include;$(ProjectDir)Libs\glfw\include;$(SolutionDir)Libs\glad\include;$(SolutionDir)Libs\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Libs\glad\include;$(ProjectDir)Libs\glfw\include;$(SolutionDir)Libs\glad\include;$(SolutionDir)Libs\glfw\include;%(AdditionalIncludeDirectories);$(ProjectDir);$(ProjectDir)Header</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
