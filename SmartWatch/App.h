@@ -41,6 +41,14 @@ extern int g_seconds;
 void initClock();
 void updateClock();
 
+// === Heart (otkucaji srca, BPM) ===
+extern float g_bpm;          // trenutni BPM
+extern float g_bpmTarget;    // ka kojoj vrednosti teži BPM (trčanje / mirovanje)
+
+// inicijalizacija i update za HEART ekran
+void initHeart();
+void updateHeart(GLFWwindow* window);
+void drawHeartScreen();
 
 // === Funkcije koje koristi main.cpp ===
 void initGL();                      // inicijalizacija OpenGL stanja, šejdera, VAO/VBO
