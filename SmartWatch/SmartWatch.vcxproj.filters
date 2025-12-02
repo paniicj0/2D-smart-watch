@@ -92,5 +92,17 @@
     <Image Include="Resource Files\ekg.jpg">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="Resource Files\love-pointer.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resource Files\right-arrow.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resource Files\left-arrow.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resource Files\potpis.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

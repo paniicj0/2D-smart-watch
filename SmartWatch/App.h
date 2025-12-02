@@ -54,3 +54,10 @@ void drawHeartScreen();
 void initGL();                      // inicijalizacija OpenGL stanja, šejdera, VAO/VBO
 void updateAndRender(GLFWwindow*);  // jedan frame: input + logika + crtanje
 
+// Battery
+void initBattery();
+void updateBattery();
+void drawBatteryScreen();
+
+void initHeartCursor(GLFWwindow* window);
+void destroyHeartCursor();

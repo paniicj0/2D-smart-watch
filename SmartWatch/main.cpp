@@ -42,6 +42,7 @@ int main() {
 
     // === 3) Naš OpenGL setup (šejderi, VAO/VBO...) ===
     initGL();
+	initHeartCursor(window);
 
     // === 4) Glavna petlja sa frame limiterom 75 FPS ===
     const double TARGET_FPS = 75.0;
