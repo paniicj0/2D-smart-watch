@@ -622,12 +622,10 @@ static void drawTexturedQuad(GLuint texture,
 void updateAndRender(GLFWwindow* window) {
     // --- 1) input ---
     glfwPollEvents();
+	updateClock();
     updateBattery();
 
-    if (currentScreen == Screen::TIME) {
-        updateClock();
-    }
-    else if (currentScreen == Screen::HEART) {
+    if (currentScreen == Screen::HEART) {
         updateHeart(window);
     }
 
