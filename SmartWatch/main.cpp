@@ -1,4 +1,7 @@
 ﻿#include "App.h"
+#include <chrono>
+#include <thread>
+
 
 int main() {
     // === 1) Inicijalizacija GLFW ===

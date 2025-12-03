@@ -43,6 +43,7 @@
     <Image Include="Resource Files\love-pointer.png" />
     <Image Include="Resource Files\potpis.png" />
     <Image Include="Resource Files\right-arrow.png" />
+    <Image Include="Resource Files\zio.png" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>

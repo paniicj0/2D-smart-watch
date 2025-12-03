@@ -17,6 +17,7 @@ GLuint signatureTexture = 0;
 GLuint signatureVAO = 0;
 GLuint signatureVBO = 0;
 
+GLuint warningTexture = 0;
 
 GLuint quadVAO = 0;
 GLuint quadVBO = 0;
@@ -234,6 +235,12 @@ static void initEKG() {
         std::cerr << "WARNING: ekgTexture not loaded!\n";
     }
 
+    // 🆕 warning tekstura
+    warningTexture = loadTexture("Resource Files/zio.png");
+    if (warningTexture == 0) {
+        std::cerr << "WARNING: warningTexture not loaded!\n";
+    }
+
     glUseProgram(ekgShaderProgram);
     GLint texLoc = glGetUniformLocation(ekgShaderProgram, "uTexture");
     glUniform1i(texLoc, 0); // texture unit 0
@@ -415,70 +422,6 @@ static void drawDigit(int digit,
 
     for (int s = 0; s < 7; ++s) {
         if (DIGIT_SEGMENTS[digit][s]) {
-            drawSegment(s, cx, cy, w, h, r, g, b);
-        }
-    }
-}
-
-static void drawLetterBPM(char c,
-    float cx, float cy,
-    float w, float h,
-    float r, float g, float b)
-{
-    // sve segmente startno gasimo
-    bool seg[7] = { false, false, false, false, false, false, false };
-
-    switch (c) {
-    case 'B':
-        seg[3] = true; // donji
-        seg[4] = true; // donji-levi
-        seg[2] = true; // donji-desni
-        seg[6] = true; // srednji
-        seg[5] = true; // gornji-levi
-        break;
-
-    case 'P':
-        seg[0] = true; // gornji
-        seg[5] = true; // gornji-levi
-        seg[1] = true; // gornji-desni
-        seg[6] = true; // srednji
-        seg[4] = true; // malo dole levo
-        break;
-
-    case 'M': {
-        // ručno crtamo 3 uspravne crtice: | | |
-        float halfW = w * 0.5f;
-        float halfH = h * 0.5f;
-        float barW = w * 0.18f;    // širina jedne crtice
-
-        float xLeftMin = cx - halfW;
-        float xLeftMax = xLeftMin + barW;
-
-        float xMidMin = cx - barW * 0.5f;
-        float xMidMax = xMidMin + barW;
-
-        float xRightMax = cx + halfW;
-        float xRightMin = xRightMax - barW;
-
-        float yMin = cy - halfH;
-        float yMax = cy + halfH;
-
-        // leva crtica
-        drawQuad(xLeftMin, xLeftMax, yMin, yMax, r, g, b);
-        // srednja crtica
-        drawQuad(xMidMin, xMidMax, yMin, yMax, r, g, b);
-        // desna crtica
-        drawQuad(xRightMin, xRightMax, yMin, yMax, r, g, b);
-
-        return; 
-    }
-
-    default:
-        return;
-    }
-
-    for (int s = 0; s < 7; ++s) {
-        if (seg[s]) {
             drawSegment(s, cx, cy, w, h, r, g, b);
         }
     }
@@ -928,31 +871,16 @@ void drawHeartScreen() {
     int bpmInt = static_cast<int>(std::round(g_bpm));
 
     float bpmCenterX = 0.0f;   // centrirano po X
-    float bpmCenterY = 0.75f;  // pri vrhu ekrana
+    float bpmCenterY = 0.85f;  // pri vrhu ekrana
     float bpmDigitW = 0.08f;
     float bpmDigitH = 0.18f;
     float bpmSpacing = 0.11f;
 
-    // --- Slova "BPM" desno od broja ---
-    float lettersSpacing = bpmDigitW * 0.9f;   // razmak između slova
-    float lettersW = bpmDigitW * 0.7f;         // malo uža slova
-    float lettersH = bpmDigitH * 0.8f;
 
     int value = bpmInt;
     int numDigits = (value >= 100) ? 3 : 2;
 
     float rightEdgeX = bpmCenterX + (numDigits == 3 ? bpmSpacing : bpmSpacing * 0.5f);
-
-    // prvi centar za slovo 'B' malo desno od broja
-    float letterStartX = rightEdgeX + bpmDigitW * 0.7f;
-    float y = bpmCenterY;
-
-    // B
-    drawLetterBPM('B', letterStartX + +lettersSpacing, y, lettersW, lettersH, 1.0f, 1.0f, 1.0f);
-    // P
-    drawLetterBPM('P', letterStartX + 2.0f*lettersSpacing, y, lettersW, lettersH, 1.0f, 1.0f, 1.0f);
-    // M
-    drawLetterBPM('M', letterStartX + 3.0f * lettersSpacing, y, lettersW, lettersH, 1.0f, 1.0f, 1.0f);
 
 
     drawNumber(bpmInt, bpmCenterX, bpmCenterY,
@@ -993,12 +921,50 @@ void drawHeartScreen() {
 
     // ako BPM pređe 200 – crveno upozorenje preko ekrana
     if (g_bpm > 200.0f) {
+        // crveni overlay
         drawQuad(-1.0f, 1.0f, -1.0f, 1.0f,
             0.8f, 0.0f, 0.0f);
-        // kasnije ovde dodamo tekst "Zaustavi se i odmori!"
-    }
-    drawSignature(0.55f, 0.95f, -0.95f, -0.80f);
 
+        // ako postoji warning tekstura – nacrtaj je preko
+        if (warningTexture != 0) {
+            glUseProgram(ekgShaderProgram);
+
+            // za warning nećemo scale/scroll, pa ih resetujemo
+            GLint scaleLoc = glGetUniformLocation(ekgShaderProgram, "uScaleX");
+            GLint offsetLoc = glGetUniformLocation(ekgShaderProgram, "uOffsetX");
+            glUniform1f(scaleLoc, 1.0f);
+            glUniform1f(offsetLoc, 0.0f);
+
+            // pravougaonik u sredini ekrana
+            float quadXmin = -1.0f;
+            float quadXmax = 1.0f;
+            float quadYmin = -1.0f;
+            float quadYmax = 1.0f;
+
+            float vertices[6 * 4] = {
+                // x,       y,       u, v
+                quadXmin, quadYmin, 0.0f, 0.0f,
+                quadXmax, quadYmin, 1.0f, 0.0f,
+                quadXmax, quadYmax, 1.0f, 1.0f,
+
+                quadXmin, quadYmin, 0.0f, 0.0f,
+                quadXmax, quadYmax, 1.0f, 1.0f,
+                quadXmin, quadYmax, 0.0f, 1.0f
+            };
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, warningTexture);
+
+            glBindVertexArray(ekgVAO);
+            glBindBuffer(GL_ARRAY_BUFFER, ekgVBO);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+
+            glBindVertexArray(0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+    }
 }
 
 void updateBattery() {
