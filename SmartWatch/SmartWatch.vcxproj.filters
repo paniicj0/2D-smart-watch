@@ -104,5 +104,8 @@
     <Image Include="Resource Files\potpis.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="Resource Files\zio.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>
