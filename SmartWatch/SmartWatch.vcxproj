@@ -20,21 +20,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\..\..\..\Downloads\stb_image.h" />
-    <ClInclude Include="..\..\..\..\..\..\..\glfw-3.4.bin.WIN64\include\GLFW\glfw3.h" />
-    <ClInclude Include="..\..\..\..\..\..\..\glfw-3.4.bin.WIN64\include\GLFW\glfw3native.h" />
-    <ClInclude Include="..\..\..\..\..\..\..\include\glad\glad.h" />
-    <ClInclude Include="..\..\..\..\..\..\..\include\KHR\khrplatform.h" />
     <ClInclude Include="App.h" />
+    <ClInclude Include="Libs\glad\include\glad\glad.h" />
+    <ClInclude Include="Libs\glad\include\KHR\khrplatform.h" />
+    <ClInclude Include="Libs\glfw\include\GLFW\glfw3.h" />
+    <ClInclude Include="Libs\glfw\include\GLFW\glfw3native.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\..\..\..\glfw-3.4.bin.WIN64\lib-vc2022\glfw3.dll" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\..\..\..\..\..\..\glfw-3.4.bin.WIN64\lib-vc2022\glfw3.lib" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\..\..\src\glad.c" />
     <ClCompile Include="App.cpp" />
+    <ClCompile Include="Libs\glad\src\glad.c" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -44,6 +38,12 @@
     <Image Include="Resource Files\potpis.png" />
     <Image Include="Resource Files\right-arrow.png" />
     <Image Include="Resource Files\zio.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Libs\glfw\lib\glfw3.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="Libs\glfw\lib\glfw3.lib" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>

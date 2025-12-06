@@ -48,44 +48,34 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\..\..\glfw-3.4.bin.WIN64\include\GLFW\glfw3.h">
-      <Filter>Libs\glfw\include\GLFW</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\..\..\glfw-3.4.bin.WIN64\include\GLFW\glfw3native.h">
-      <Filter>Libs\glfw\include\GLFW</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\..\..\include\glad\glad.h">
-      <Filter>Libs\glad\include\glad</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\..\..\..\include\KHR\khrplatform.h">
-      <Filter>Libs\glad\include\KHR</Filter>
-    </ClInclude>
     <ClInclude Include="App.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\..\..\..\Downloads\stb_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Libs\glad\include\glad\glad.h">
+      <Filter>Libs\glad\include\glad</Filter>
+    </ClInclude>
+    <ClInclude Include="Libs\glad\include\KHR\khrplatform.h">
+      <Filter>Libs\glad\include\KHR</Filter>
+    </ClInclude>
+    <ClInclude Include="Libs\glfw\include\GLFW\glfw3.h">
+      <Filter>Libs\glfw\include\GLFW</Filter>
+    </ClInclude>
+    <ClInclude Include="Libs\glfw\include\GLFW\glfw3native.h">
+      <Filter>Libs\glfw\include\GLFW</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\..\..\..\..\glfw-3.4.bin.WIN64\lib-vc2022\glfw3.dll">
-      <Filter>Libs\glfw\lib</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\..\..\..\..\..\..\glfw-3.4.bin.WIN64\lib-vc2022\glfw3.lib">
-      <Filter>Libs\glfw\lib</Filter>
-    </Library>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\..\..\src\glad.c">
-      <Filter>Libs\glad\src</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="App.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Libs\glad\src\glad.c">
+      <Filter>Libs\glad\src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -107,5 +97,15 @@
     <Image Include="Resource Files\zio.png">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Libs\glfw\lib\glfw3.dll">
+      <Filter>Libs\glfw\lib</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="Libs\glfw\lib\glfw3.lib">
+      <Filter>Libs\glfw\lib</Filter>
+    </Library>
   </ItemGroup>
 </Project>

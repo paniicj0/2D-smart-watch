@@ -2,35 +2,33 @@
 #include "stb_image.h"
 
 #include "App.h"
-#include <ctime>   // za lokalno vreme
-#include <cstdlib>   // za rand
+#include <ctime>   
+#include <cstdlib> 
 #include <cmath>     
 
-// === Definicije globalnih promenljivih ===
 Screen currentScreen = Screen::TIME;
 bool leftMouseDownLastFrame = false;
 static GLFWcursor* g_heartCursor = nullptr;
+
 GLuint arrowLeftTexture = 0;
 GLuint arrowRightTexture = 0;
-
+//za potpis
 GLuint signatureTexture = 0;
 GLuint signatureVAO = 0;
 GLuint signatureVBO = 0;
 
 GLuint warningTexture = 0;
 
+// osnovni OpenGL objekti
 GLuint quadVAO = 0;
 GLuint quadVBO = 0;
 GLuint shaderProgram = 0;
 
-// === Sat ===
 int g_hours = 0;
 int g_minutes = 0;
 int g_seconds = 0;
-
 static double lastClockUpdate = 0.0;
 
-// === Heart / BPM ===
 float g_bpm = 70.0f;
 float g_bpmTarget = 70.0f;
 
@@ -38,24 +36,23 @@ static float g_restBpmMin = 60.0f;
 static float g_restBpmMax = 80.0f;
 static float g_maxBpm = 210.0f;
 
-// vreme za "lagano" menjanje random BPM-a u mirovanju
+// random bpm u mirovanju
 static double lastHeartRandomChange = 0.0;
 
-// za EKG animaciju (za sada samo čuvamo, kasnije koristimo za teksture)
-static float g_ekgScaleX = 1.0f;   // koliko je talas "zgusnut"
-static float g_ekgSpeed = 0.5f;  // brzina pomeranja
+// za ekg animaciju 
+static float g_ekgScaleX = 1.0f;  
+static float g_ekgSpeed = 0.5f;  
 static double lastHeartUpdateTime = 0.0;
 
-// === EKG tekstura & shader ===
+// sejder i tekstura za ekg
 GLuint ekgTexture = 0;
 GLuint ekgVAO = 0;
 GLuint ekgVBO = 0;
 GLuint ekgShaderProgram = 0;
 
-float g_ekgScroll = 0.0f;   // koliko smo "odskrolovali" teksturu ulevo
+float g_ekgScroll = 0.0f;   // skrol na levo
 
-// === Baterija ===
-int g_batteryPercent = 100;          // od 0 do 100
+int g_batteryPercent = 100;          
 static double lastBatteryUpdateTime = 0.0;
 
 Button arrowRightTime{ 0.6f, 0.9f, -0.1f, 0.1f };   // TIME -> HEART
@@ -64,7 +61,6 @@ Button arrowRightHeart{ 0.6f, 0.9f, -0.1f, 0.1f };   // HEART -> BATTERY
 Button arrowLeftBattery{ -0.9f, -0.6f, -0.1f, 0.1f }; // BATTERY -> HEART
 
 
-// === GLSL šejderi za 2D pravougaonik ===
 const char* vertexShaderSrc = R"(
 #version 330 core
 layout (location = 0) in vec2 aPos;
@@ -84,7 +80,7 @@ void main() {
 }
 )";
 
-// === GLSL šejderi za teksturisani EKG quad ===
+
 const char* ekgVertexShaderSrc = R"(
 #version 330 core
 layout (location = 0) in vec2 aPos;
@@ -92,8 +88,8 @@ layout (location = 1) in vec2 aTex;
 
 out vec2 TexCoord;
 
-uniform float uScaleX;   // koliko "zgusnemo" talas
-uniform float uOffsetX;  // pomeraj ulevo/desno
+uniform float uScaleX; 
+uniform float uOffsetX; 
 
 void main() {
     TexCoord = vec2(aTex.x * uScaleX + uOffsetX, aTex.y);
@@ -107,16 +103,13 @@ in vec2 TexCoord;
 out vec4 FragColor;
 
 uniform sampler2D uTexture;
-uniform float uGlobalAlpha;   // dodato
+uniform float uGlobalAlpha;   
 
 void main() {
     vec4 tex = texture(uTexture, TexCoord);
-    // množimo originalnu alfu sa globalnom
     FragColor = vec4(tex.rgb, tex.a * uGlobalAlpha);
 }
 )";
-
-
 
 
 static GLuint compileShader(GLenum type, const char* src) {
@@ -124,7 +117,6 @@ static GLuint compileShader(GLenum type, const char* src) {
     glShaderSource(shader, 1, &src, nullptr);
     glCompileShader(shader);
 
-    // (po želji dodaj check za greške)
     GLint success = 0;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
@@ -163,11 +155,10 @@ static void drawQuad(float xMin, float xMax, float yMin, float yMax,
 }
 
 
-// učitavanje teksture iz fajla
 static GLuint loadTexture(const char* path) {
     int width, height, nrChannels;
-    stbi_set_flip_vertically_on_load(1); // ako ti tekstura ispadne naopako, ovo pomaže
-    unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 4); // forsiramo RGBA
+    stbi_set_flip_vertically_on_load(1); // jer mi je otislo naopako
+    unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 4);
 
     if (!data) {
         std::cerr << "Failed to load texture: " << path << std::endl;
@@ -211,14 +202,12 @@ static void initEKG() {
     glDeleteShader(vs);
     glDeleteShader(fs);
 
-    // quad sa pozicijom + UV
     glGenVertexArrays(1, &ekgVAO);
     glGenBuffers(1, &ekgVBO);
 
     glBindVertexArray(ekgVAO);
     glBindBuffer(GL_ARRAY_BUFFER, ekgVBO);
 
-    // 6 verteksa, svaki ima (x, y, u, v)
     glBufferData(GL_ARRAY_BUFFER, 6 * 4 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 
     glEnableVertexAttribArray(0);
@@ -235,7 +224,7 @@ static void initEKG() {
         std::cerr << "WARNING: ekgTexture not loaded!\n";
     }
 
-    // 🆕 warning tekstura
+    // warning tekstura
     warningTexture = loadTexture("Resource Files/zio.png");
     if (warningTexture == 0) {
         std::cerr << "WARNING: warningTexture not loaded!\n";
@@ -243,7 +232,7 @@ static void initEKG() {
 
     glUseProgram(ekgShaderProgram);
     GLint texLoc = glGetUniformLocation(ekgShaderProgram, "uTexture");
-    glUniform1i(texLoc, 0); // texture unit 0
+    glUniform1i(texLoc, 0); 
     glUseProgram(0);
 }
 
@@ -254,7 +243,6 @@ void initSignature() {
     glBindVertexArray(signatureVAO);
     glBindBuffer(GL_ARRAY_BUFFER, signatureVBO);
 
-    // 6 verteksa (position + UV)
     glBufferData(GL_ARRAY_BUFFER, 6 * 4 * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 
     glEnableVertexAttribArray(0);
@@ -265,7 +253,6 @@ void initSignature() {
 
     glBindVertexArray(0);
 
-    // učitavamo PNG
     signatureTexture = loadTexture("Resource Files/potpis.png");
 
     if (!signatureTexture) {
@@ -286,7 +273,7 @@ void drawSignature(float xMin, float xMax, float yMin, float yMax) {
         xMin, yMax,  0.0f, 1.0f
     };
 
-    glUseProgram(ekgShaderProgram);  // koristimo teksturisani shader
+    glUseProgram(ekgShaderProgram); 
 
     GLint scaleLoc = glGetUniformLocation(ekgShaderProgram, "uScaleX");
     GLint offsetLoc = glGetUniformLocation(ekgShaderProgram, "uOffsetX");
@@ -357,7 +344,7 @@ static void drawSegment(int segIndex,
     float w, float h,
     float r, float g, float b)
 {
-    float thickness = w * 0.20f;      // debljina segmenta
+    float thickness = w * 0.20f;      
     float halfW = w * 0.5f;
     float halfH = h * 0.5f;
 
@@ -428,7 +415,7 @@ static void drawDigit(int digit,
 }
 
 
-// dve tačkice ':' između HH i MM, i MM i SS
+// dve tackice izmedju HH i MM, i MM i SS
 static void drawColon(float cx, float cy, float size,
     float r, float g, float b)
 {
@@ -436,21 +423,18 @@ static void drawColon(float cx, float cy, float size,
     float dotW = size * 0.10f;
     float offsetY = size * 0.20f;
 
-    // gornja tačka
     drawQuad(cx - dotW, cx + dotW,
         cy + offsetY - dotH, cy + offsetY + dotH,
         r, g, b);
 
-    // donja tačka
     drawQuad(cx - dotW, cx + dotW,
         cy - offsetY - dotH, cy - offsetY + dotH,
         r, g, b);
 }
 
-// kreira kompletan prikaz HH:MM:SS u centru ekrana
 static void drawTimeDisplay()
 {
-    // razdvojimo cifre
+    // razdvajam cifre
     int hT = g_hours / 10;
     int hU = g_hours % 10;
     int mT = g_minutes / 10;
@@ -458,14 +442,13 @@ static void drawTimeDisplay()
     int sT = g_seconds / 10;
     int sU = g_seconds % 10;
 
-    // pozicioniranje (NDC koordinate)
+    // pozicioniranje 
     float centerY = 0.0f;
     float digitW = 0.12f;
     float digitH = 0.25f;
-    float spacing = 0.20f;   // razmak između centara cifara
-    float colonGap = 0.12f;   // dodatni razmak oko ':' 
+    float spacing = 0.20f;   
+    float colonGap = 0.12f;   // dodatni razmak oko :
 
-    // ručno odredimo x koordinate za 6 cifara + 2 dvotačke
     float startX = -0.65f;
 
     float x_hT = startX;
@@ -512,7 +495,6 @@ static void drawNumber(int value,
     int ones = value % 10;
 
     if (value >= 100) {
-        // 3 cifre: H T O
         float startX = centerX - spacing;         
         float xH = startX;
         float xT = startX + spacing;
@@ -523,7 +505,6 @@ static void drawNumber(int value,
         drawDigit(ones, xO, centerY, digitW, digitH, r, g, b);
     }
     else {
-        // 2 cifre: T O
         int t = value / 10;
         int o = value % 10;
 
@@ -539,11 +520,9 @@ static void drawNumber(int value,
 
 
 void initGL() {
-    // blending za providne teksture (treba?e kasnije)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // kompajliraj šejdere i napravi program
     GLuint vs = compileShader(GL_VERTEX_SHADER, vertexShaderSrc);
     GLuint fs = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSrc);
 
@@ -555,7 +534,6 @@ void initGL() {
     glDeleteShader(vs);
     glDeleteShader(fs);
 
-    // VAO / VBO za pravougaonik
     glGenVertexArrays(1, &quadVAO);
     glGenBuffers(1, &quadVBO);
 
@@ -618,9 +596,8 @@ static void drawTexturedQuad(GLuint texture,
 }
 
 
-// === updateAndRender: jedan frame (input + logika + crtanje) ===
 void updateAndRender(GLFWwindow* window) {
-    // --- 1) input ---
+
     glfwPollEvents();
 	updateClock();
     updateBattery();
@@ -637,7 +614,6 @@ void updateAndRender(GLFWwindow* window) {
     int windowWidth, windowHeight;
     glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
 
-    // detekcija klika (edge – samo trenutak kada je kliknut)
     int mouseState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
     bool justClicked = (mouseState == GLFW_PRESS && !leftMouseDownLastFrame);
     leftMouseDownLastFrame = (mouseState == GLFW_PRESS);
@@ -676,7 +652,6 @@ void updateAndRender(GLFWwindow* window) {
         }
     }
 
-    // --- 2) render ---
     if (currentScreen == Screen::TIME) {
         glClearColor(0.1f, 0.1f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -689,7 +664,6 @@ void updateAndRender(GLFWwindow* window) {
 
     }
     else if (currentScreen == Screen::HEART) {
-        // HEART ekran crtamo posebnom funkcijom
         drawHeartScreen();
 
     }
@@ -700,7 +674,7 @@ void updateAndRender(GLFWwindow* window) {
 }
 
 void initClock() {
-    // Uzimamo trenutno lokalno vreme sa sistema
+    // trenutno lokalno vreme sa sistema
     std::time_t now = std::time(nullptr);
     std::tm lt{};
     localtime_s(&lt, &now);
@@ -752,12 +726,6 @@ void updateClock() {
                 g_hours = 0;
             }
         }
-
-        // (za debug): ispiši u konzolu
-        std::cout << "Time: "
-            << (g_hours < 10 ? "0" : "") << g_hours << ":"
-            << (g_minutes < 10 ? "0" : "") << g_minutes << ":"
-            << (g_seconds < 10 ? "0" : "") << g_seconds << "\n";
     }
 }
 
@@ -771,12 +739,12 @@ void updateHeart(GLFWwindow* window) {
     bool running = (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS);
 
     if (running) {
-        // trčanje: povećavamo target BPM ka maxBpm
+        // trcanje povecavam target BPM ka maxBpm
         g_bpmTarget += 40.0f * static_cast<float>(dt);  // ~40 BPM po sekundi
         if (g_bpmTarget > g_maxBpm) g_bpmTarget = g_maxBpm;
     }
     else {
-        // mirovanje: lagano vraćanje na random bazu 60-80 BPM
+        // mirovanje: vracanje na random bazu 60-80 BPM
         if (now - lastHeartRandomChange > 2.0) {
             lastHeartRandomChange = now;
             float t = static_cast<float>(std::rand()) / RAND_MAX;
@@ -786,24 +754,22 @@ void updateHeart(GLFWwindow* window) {
     }
 
     // glatko približavanje current BPM ka targetu
-    float lerpFactor = static_cast<float>(dt) * 2.0f; // brzina prilagođavanja
+    float lerpFactor = static_cast<float>(dt) * 2.0f; // brzina prilagodjavanja
     if (lerpFactor > 1.0f) lerpFactor = 1.0f;
 
     g_bpm = g_bpm + (g_bpmTarget - g_bpm) * lerpFactor;
 
-    // EKG scale: što veći BPM, to više otkucaja na ekranu
+    // sto veći BPM, to vise otkucaja na ekranu
     float minMap = 60.0f;
     float maxMap = 200.0f;
     float clamped = std::fmax(minMap, std::fmin(maxMap, g_bpm));
     float alpha = (clamped - minMap) / (maxMap - minMap);
     g_ekgScaleX = 1.0f + alpha * 2.0f;
 
-    // za debug:
-    std::cout << "BPM: " << g_bpm << " (target: " << g_bpmTarget << ")\n";
-
     // skrolovanje EKG talasa ulevo
     g_ekgScroll += g_ekgSpeed * static_cast<float>(dt);
-    // da ne raste u beskonačnost, samo ga "zamotamo"
+
+    // da ne raste u beskonačnost
     if (g_ekgScroll < -1000.0f) {
         g_ekgScroll += 1000.0f;
     }
@@ -815,7 +781,6 @@ static void drawEKGQuad(float xMin, float xMax, float yMin, float yMax) {
         return;
     }
 
-    // pozicija u NDC
     float vertices[6 * 4] = {
         //  x,      y,      u, v
         xMin, yMin,  0.0f, 0.0f,
@@ -829,7 +794,6 @@ static void drawEKGQuad(float xMin, float xMax, float yMin, float yMax) {
 
     glUseProgram(ekgShaderProgram);
 
-    // scale i offset
     GLint scaleLoc = glGetUniformLocation(ekgShaderProgram, "uScaleX");
     GLint offsetLoc = glGetUniformLocation(ekgShaderProgram, "uOffsetX");
     glUniform1f(scaleLoc, g_ekgScaleX);
@@ -856,7 +820,7 @@ void drawHeartScreen() {
     glClearColor(0.3f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // pravougaonik zona EKG grafika (tamno siva "kutija")
+    // pravougaonik zona EKG grafika 
     float boxXmin = -0.6f;
     float boxXmax = 0.6f;
     float boxYmin = -0.3f;
@@ -886,7 +850,6 @@ void drawHeartScreen() {
         1.0f, 1.0f, 1.0f);   // bela boja
 
 
-    // "linija" EKG bazne linije (zelena horizontalna)
     float lineThickness = 0.02f;
     drawQuad(boxXmin, boxXmax,
         -lineThickness * 0.5f, lineThickness * 0.5f,
@@ -896,18 +859,17 @@ void drawHeartScreen() {
     float minVis = 60.0f;
     float maxVis = 200.0f;
     float clampedBpm = std::fmax(minVis, std::fmin(maxVis, g_bpm));
-    float normBpm = (clampedBpm - minVis) / (maxVis - minVis); // 0..1
+    float normBpm = (clampedBpm - minVis) / (maxVis - minVis); 
 
-    float barWidth = -0.8f + normBpm * 1.6f; // od -0.8 do +0.8
+    float barWidth = -0.8f + normBpm * 1.6f; 
 
     drawQuad(-0.8f, barWidth,
         0.6f, 0.7f,
-        0.8f, 0.8f, 0.0f); // žućkasta bar za BPM
+        0.8f, 0.8f, 0.0f); // zuckasta bar za BPM
 
     // EKG tekstura koja se pomera ulevo i "zgusne" sa BPM
     drawEKGQuad(boxXmin, boxXmax, boxYmin, boxYmax);
 
-    // strelice: levo (nazad na TIME) i desno (na BATTERY)
     drawTexturedQuad(arrowLeftTexture,
         arrowLeftHeart.xMin, arrowLeftHeart.xMax,
         arrowLeftHeart.yMin, arrowLeftHeart.yMax);
@@ -923,17 +885,14 @@ void drawHeartScreen() {
         drawQuad(-1.0f, 1.0f, -1.0f, 1.0f,
             0.8f, 0.0f, 0.0f);
 
-        // ako postoji warning tekstura – nacrtaj je preko
         if (warningTexture != 0) {
             glUseProgram(ekgShaderProgram);
 
-            // za warning nećemo scale/scroll, pa ih resetujemo
             GLint scaleLoc = glGetUniformLocation(ekgShaderProgram, "uScaleX");
             GLint offsetLoc = glGetUniformLocation(ekgShaderProgram, "uOffsetX");
             glUniform1f(scaleLoc, 1.0f);
             glUniform1f(offsetLoc, 0.0f);
 
-            // pravougaonik u sredini ekrana
             float quadXmin = -1.0f;
             float quadXmax = 1.0f;
             float quadYmin = -1.0f;
@@ -963,6 +922,8 @@ void drawHeartScreen() {
             glBindTexture(GL_TEXTURE_2D, 0);
         }
     }
+
+	drawSignature(0.55f, 0.95f, -0.95f, -0.80f); //crtanje potpisa
 }
 
 void updateBattery() {
@@ -971,7 +932,7 @@ void updateBattery() {
 
     // na svakih 10 sekundi smanji procenat za 1
     if (diff >= 10.0) {
-        int steps = static_cast<int>(diff / 10.0); // koliko "desetki" je prošlo
+        int steps = static_cast<int>(diff / 10.0); 
         lastBatteryUpdateTime += steps * 10.0;
 
         g_batteryPercent -= steps;
@@ -995,7 +956,6 @@ void drawBatteryScreen() {
     float capYmin = -0.05f;
     float capYmax = 0.05f;
 
-    // okvir – crtamo kao pravougaonike za ivice
     float border = 0.01f;
     // gornja ivica
     drawQuad(bodyXmin, bodyXmax, bodyYmax - border, bodyYmax, 1.0f, 1.0f, 1.0f);
