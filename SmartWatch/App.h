@@ -56,3 +56,6 @@ void drawBatteryScreen();
 
 void initHeartCursor(GLFWwindow* window);
 void destroyHeartCursor();
+
+unsigned int compileShader(GLenum type, const char* source);
+unsigned int createShader(const char* vsSource, const char* fsSource);

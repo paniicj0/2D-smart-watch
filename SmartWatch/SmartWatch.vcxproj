@@ -41,6 +41,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Libs\glfw\lib\glfw3.dll" />
+    <None Include="Shaders\color.frag" />
+    <None Include="Shaders\color.vert" />
+    <None Include="Shaders\ekg.frag" />
+    <None Include="Shaders\ekg.vert" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Libs\glfw\lib\glfw3.lib" />

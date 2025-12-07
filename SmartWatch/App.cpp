@@ -5,10 +5,15 @@
 #include <ctime>   
 #include <cstdlib> 
 #include <cmath>     
+#include <fstream>
+#include <sstream>
+#include <iostream>
+
 
 Screen currentScreen = Screen::TIME;
 bool leftMouseDownLastFrame = false;
 static GLFWcursor* g_heartCursor = nullptr;
+
 
 GLuint arrowLeftTexture = 0;
 GLuint arrowRightTexture = 0;
@@ -22,7 +27,6 @@ GLuint warningTexture = 0;
 // osnovni OpenGL objekti
 GLuint quadVAO = 0;
 GLuint quadVBO = 0;
-GLuint shaderProgram = 0;
 
 int g_hours = 0;
 int g_minutes = 0;
@@ -48,7 +52,6 @@ static double lastHeartUpdateTime = 0.0;
 GLuint ekgTexture = 0;
 GLuint ekgVAO = 0;
 GLuint ekgVBO = 0;
-GLuint ekgShaderProgram = 0;
 
 float g_ekgScroll = 0.0f;   // skrol na levo
 
@@ -60,73 +63,83 @@ Button arrowLeftHeart{ -0.9f, -0.6f, -0.1f, 0.1f }; // HEART -> TIME
 Button arrowRightHeart{ 0.6f, 0.9f, -0.1f, 0.1f };   // HEART -> BATTERY
 Button arrowLeftBattery{ -0.9f, -0.6f, -0.1f, 0.1f }; // BATTERY -> HEART
 
-
-const char* vertexShaderSrc = R"(
-#version 330 core
-layout (location = 0) in vec2 aPos;
-
-void main() {
-    gl_Position = vec4(aPos, 0.0, 1.0);
-}
-)";
-
-const char* fragmentShaderSrc = R"(
-#version 330 core
-out vec4 FragColor;
-uniform vec3 uColor;
-
-void main() {
-    FragColor = vec4(uColor, 1.0);
-}
-)";
+GLuint shaderProgram = 0;      // za boju (uColor)
+GLuint ekgShaderProgram = 0;   // za EKG / teksture
 
 
-const char* ekgVertexShaderSrc = R"(
-#version 330 core
-layout (location = 0) in vec2 aPos;
-layout (location = 1) in vec2 aTex;
+// Ucitavanje i kompajliranje sejdera iz FAJLA
+static unsigned int compileShader(GLenum type, const char* path)
+{
+    std::ifstream file(path);
+    std::stringstream ss;
 
-out vec2 TexCoord;
-
-uniform float uScaleX; 
-uniform float uOffsetX; 
-
-void main() {
-    TexCoord = vec2(aTex.x * uScaleX + uOffsetX, aTex.y);
-    gl_Position = vec4(aPos, 0.0, 1.0);
-}
-)";
-
-const char* ekgFragmentShaderSrc = R"(
-#version 330 core
-in vec2 TexCoord;
-out vec4 FragColor;
-
-uniform sampler2D uTexture;
-uniform float uGlobalAlpha;   
-
-void main() {
-    vec4 tex = texture(uTexture, TexCoord);
-    FragColor = vec4(tex.rgb, tex.a * uGlobalAlpha);
-}
-)";
-
-
-static GLuint compileShader(GLenum type, const char* src) {
-    GLuint shader = glCreateShader(type);
-    glShaderSource(shader, 1, &src, nullptr);
-    glCompileShader(shader);
-
-    GLint success = 0;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-        std::cerr << "Shader compile error: " << infoLog << std::endl;
+    if (file.is_open())
+    {
+        ss << file.rdbuf();
+        file.close();
+        std::cout << "Uspjesno procitao fajl sa putanje \"" << path << "\"!" << std::endl;
+    }
+    else {
+        std::cout << "Greska pri citanju fajla sa putanje \"" << path << "\"!" << std::endl;
+        return 0;
     }
 
+    std::string temp = ss.str();
+    const char* sourceCode = temp.c_str();
+
+    unsigned int shader = glCreateShader(type);
+
+    int success;
+    char infoLog[512];
+
+    glShaderSource(shader, 1, &sourceCode, NULL);
+    glCompileShader(shader);
+
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (success == GL_FALSE)
+    {
+        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        if (type == GL_VERTEX_SHADER)
+            printf("VERTEX");
+        else if (type == GL_FRAGMENT_SHADER)
+            printf("FRAGMENT");
+        printf(" sejder ima gresku! Greska: \n");
+        printf("%s\n", infoLog);
+    }
     return shader;
 }
+
+static unsigned int createShader(const char* vsPath, const char* fsPath)
+{
+    unsigned int program = glCreateProgram();
+
+    unsigned int vertexShader = compileShader(GL_VERTEX_SHADER, vsPath);
+    unsigned int fragmentShader = compileShader(GL_FRAGMENT_SHADER, fsPath);
+
+    glAttachShader(program, vertexShader);
+    glAttachShader(program, fragmentShader);
+
+    glLinkProgram(program);
+    glValidateProgram(program);
+
+    int success;
+    char infoLog[512];
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (success == GL_FALSE)
+    {
+        glGetProgramInfoLog(program, 512, NULL, infoLog);
+        std::cout << "Objedinjeni sejder ima gresku! Greska: \n";
+        std::cout << infoLog << std::endl;
+    }
+
+    glDetachShader(program, vertexShader);
+    glDeleteShader(vertexShader);
+    glDetachShader(program, fragmentShader);
+    glDeleteShader(fragmentShader);
+
+    return program;
+}
+
 
 static void drawQuad(float xMin, float xMax, float yMin, float yMax,
     float r, float g, float b) {
@@ -190,17 +203,8 @@ static GLuint loadTexture(const char* path) {
 }
 
 static void initEKG() {
-    // shader
-    GLuint vs = compileShader(GL_VERTEX_SHADER, ekgVertexShaderSrc);
-    GLuint fs = compileShader(GL_FRAGMENT_SHADER, ekgFragmentShaderSrc);
-
-    ekgShaderProgram = glCreateProgram();
-    glAttachShader(ekgShaderProgram, vs);
-    glAttachShader(ekgShaderProgram, fs);
-    glLinkProgram(ekgShaderProgram);
-
-    glDeleteShader(vs);
-    glDeleteShader(fs);
+    // shader iz fajlova
+    ekgShaderProgram = createShader("Shaders/ekg.vert", "Shaders/ekg.frag");
 
     glGenVertexArrays(1, &ekgVAO);
     glGenBuffers(1, &ekgVBO);
@@ -523,16 +527,7 @@ void initGL() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    GLuint vs = compileShader(GL_VERTEX_SHADER, vertexShaderSrc);
-    GLuint fs = compileShader(GL_FRAGMENT_SHADER, fragmentShaderSrc);
-
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vs);
-    glAttachShader(shaderProgram, fs);
-    glLinkProgram(shaderProgram);
-
-    glDeleteShader(vs);
-    glDeleteShader(fs);
+    shaderProgram = createShader("Shaders/color.vert", "Shaders/color.frag");
 
     glGenVertexArrays(1, &quadVAO);
     glGenBuffers(1, &quadVBO);

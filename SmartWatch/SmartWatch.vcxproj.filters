@@ -102,6 +102,18 @@
     <None Include="Libs\glfw\lib\glfw3.dll">
       <Filter>Libs\glfw\lib</Filter>
     </None>
+    <None Include="Shaders\color.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\color.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ekg.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\ekg.vert">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Library Include="Libs\glfw\lib\glfw3.lib">
