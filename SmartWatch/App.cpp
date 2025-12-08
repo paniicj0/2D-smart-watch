@@ -164,7 +164,7 @@ static void drawQuad(float xMin, float xMax, float yMin, float yMax,
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
 
-    glBindVertexArray(0);
+	glBindVertexArray(0);//sprecavam da se sl objekat nacrta sa pogresnim VAO
 }
 
 
@@ -204,6 +204,8 @@ static GLuint loadTexture(const char* path) {
 
 static void initEKG() {
     // shader iz fajlova
+	//VBO stvarni podaci o vrhovima
+	//VAO opis kako su ti podaci organizovani
     ekgShaderProgram = createShader("Shaders/ekg.vert", "Shaders/ekg.frag");
 
     glGenVertexArrays(1, &ekgVAO);
@@ -836,9 +838,6 @@ void drawHeartScreen() {
 
     int value = bpmInt;
     int numDigits = (value >= 100) ? 3 : 2;
-
-    float rightEdgeX = bpmCenterX + (numDigits == 3 ? bpmSpacing : bpmSpacing * 0.5f);
-
 
     drawNumber(bpmInt, bpmCenterX, bpmCenterY,
         bpmDigitW, bpmDigitH, bpmSpacing,

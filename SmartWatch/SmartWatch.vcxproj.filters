@@ -51,9 +51,6 @@
     <ClInclude Include="App.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\..\..\..\Downloads\stb_image.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Libs\glad\include\glad\glad.h">
       <Filter>Libs\glad\include\glad</Filter>
     </ClInclude>
@@ -65,6 +62,9 @@
     </ClInclude>
     <ClInclude Include="Libs\glfw\include\GLFW\glfw3native.h">
       <Filter>Libs\glfw\include\GLFW</Filter>
+    </ClInclude>
+    <ClInclude Include="Header Files\stb_image.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

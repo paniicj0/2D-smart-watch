@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\..\..\..\Downloads\stb_image.h" />
     <ClInclude Include="App.h" />
+    <ClInclude Include="Header Files\stb_image.h" />
     <ClInclude Include="Libs\glad\include\glad\glad.h" />
     <ClInclude Include="Libs\glad\include\KHR\khrplatform.h" />
     <ClInclude Include="Libs\glfw\include\GLFW\glfw3.h" />

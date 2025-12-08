@@ -25,7 +25,7 @@ int main() {
         return -1;
     }
 
-    glfwMakeContextCurrent(window);
+	glfwMakeContextCurrent(window); //biram taj prozor kao trenutni OpenGL kontekst
 
     // glad
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -52,9 +52,10 @@ int main() {
         double frameStart = glfwGetTime();
 
         // input + logika + crtanje
+        //azurira vreme, bateriju, srce
         updateAndRender(window);
 
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(window); //prikaz sta sam nacrtala  
 
         double frameEnd = glfwGetTime();
         double frameTime = frameEnd - frameStart;
