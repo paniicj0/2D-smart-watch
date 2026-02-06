@@ -1,6 +1,7 @@
 ﻿#include "App.h"
-#include <chrono>
-#include <thread>
+#include "Watch3D.h"
+
+#include <iostream>
 
 int main() {
     if (!glfwInit()) {
@@ -8,26 +9,24 @@ int main() {
         return -1;
     }
 
-    // OpenGL 3.3 Core profile
+    // OpenGL 3.3 Core
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    // Fullscreen 
+    // fullscreen kao pre
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-	const GLFWvidmode* mode = glfwGetVideoMode(monitor);//trenutni parametri monitora
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
-    GLFWwindow* window = glfwCreateWindow(mode->width, mode->height,
-        "SmartWatch", monitor, nullptr);
+    GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "SmartWatch 3D", monitor, nullptr);
     if (!window) {
         std::cerr << "Failed to create GLFW window\n";
         glfwTerminate();
         return -1;
     }
 
-	glfwMakeContextCurrent(window); //biram taj prozor kao trenutni OpenGL kontekst
+    glfwMakeContextCurrent(window);
 
-    // glad
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cerr << "Failed to initialize GLAD\n";
         glfwDestroyWindow(window);
@@ -35,39 +34,23 @@ int main() {
         return -1;
     }
 
-    // VSYNC off (zbog frame limitera)
-    glfwSwapInterval(0);
-
-	// crtaj od 0,0 do width,height
+    glfwSwapInterval(1);
     glViewport(0, 0, mode->width, mode->height);
 
+    // inicijalizuj 2D ekran (koristi se kao tekstura na satu)
     initGL();
-	initHeartCursor(window);
+    initHeartCursor(window);
 
-	// limiter 75 FPS
-    const double TARGET_FPS = 75.0;
-    const double TARGET_FRAME_TIME = 1.0 / TARGET_FPS;
+    // inicijalizuj 3D scenu
+    init3D(window, mode->width, mode->height);
 
     while (!glfwWindowShouldClose(window)) {
-        double frameStart = glfwGetTime();
-
-        // input + logika + crtanje
-        //azurira vreme, bateriju, srce
-        updateAndRender(window);
-
-        glfwSwapBuffers(window); //prikaz sta sam nacrtala  
-
-        double frameEnd = glfwGetTime();
-        double frameTime = frameEnd - frameStart;
-
-        if (frameTime < TARGET_FRAME_TIME) {
-            double sleepTime = TARGET_FRAME_TIME - frameTime;
-            while (glfwGetTime() - frameEnd < sleepTime) {
-            }
-        }
+        glfwPollEvents();
+        updateAndRender3D(window);
+        glfwSwapBuffers(window);
     }
 
-    // ciscenje
+    cleanup3D();
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
