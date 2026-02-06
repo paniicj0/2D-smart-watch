@@ -25,11 +25,14 @@
     <ClInclude Include="Libs\glad\include\KHR\khrplatform.h" />
     <ClInclude Include="Libs\glfw\include\GLFW\glfw3.h" />
     <ClInclude Include="Libs\glfw\include\GLFW\glfw3native.h" />
+    <ClInclude Include="Math3D.h" />
+    <ClInclude Include="Watch3D.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Libs\glad\src\glad.c" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Watch3D.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Resource Files\ekg.jpg" />
@@ -37,6 +40,7 @@
     <Image Include="Resource Files\love-pointer.png" />
     <Image Include="Resource Files\potpis.png" />
     <Image Include="Resource Files\right-arrow.png" />
+    <Image Include="Resource Files\road.png" />
     <Image Include="Resource Files\zio.png" />
   </ItemGroup>
   <ItemGroup>
@@ -45,6 +49,8 @@
     <None Include="Shaders\color.vert" />
     <None Include="Shaders\ekg.frag" />
     <None Include="Shaders\ekg.vert" />
+    <None Include="Shaders\mesh3d.frag" />
+    <None Include="Shaders\mesh3d.vert" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="Libs\glfw\lib\glfw3.lib" />

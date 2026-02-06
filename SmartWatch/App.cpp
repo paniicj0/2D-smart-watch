@@ -594,81 +594,11 @@ static void drawTexturedQuad(GLuint texture,
 
 
 void updateAndRender(GLFWwindow* window) {
-
-    glfwPollEvents();
-	updateClock();
-    updateBattery();
-
-    if (currentScreen == Screen::HEART) {
-        updateHeart(window);
-    }
-
-    // ESC gasi aplikaciju
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-
     int windowWidth, windowHeight;
     glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
-
-    int mouseState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-    bool justClicked = (mouseState == GLFW_PRESS && !leftMouseDownLastFrame);
-    leftMouseDownLastFrame = (mouseState == GLFW_PRESS);
-
-    if (justClicked) {
-        double mx, my;
-        glfwGetCursorPos(window, &mx, &my);
-
-        float mouseXndc = static_cast<float>((mx / windowWidth) * 2.0 - 1.0);
-        float mouseYndc = static_cast<float>(1.0 - (my / windowHeight) * 2.0);
-
-        auto inside = [&](const Button& b) {
-            return mouseXndc >= b.xMin && mouseXndc <= b.xMax &&
-                mouseYndc >= b.yMin && mouseYndc <= b.yMax;
-            };
-
-        switch (currentScreen) {
-        case Screen::TIME:
-            if (inside(arrowRightTime)) {
-                currentScreen = Screen::HEART;
-            }
-            break;
-        case Screen::HEART:
-            if (inside(arrowLeftHeart)) {
-                currentScreen = Screen::TIME;
-            }
-            else if (inside(arrowRightHeart)) {
-                currentScreen = Screen::BATTERY;
-            }
-            break;
-        case Screen::BATTERY:
-            if (inside(arrowLeftBattery)) {
-                currentScreen = Screen::HEART;
-            }
-            break;
-        }
-    }
-
-    if (currentScreen == Screen::TIME) {
-        glClearColor(0.1f, 0.1f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        drawSignature(0.55f, 0.95f, -0.95f, -0.80f);
-        drawTimeDisplay();
-        drawTexturedQuad(arrowRightTexture,
-            arrowRightTime.xMin, arrowRightTime.xMax,
-            arrowRightTime.yMin, arrowRightTime.yMax);
-
-    }
-    else if (currentScreen == Screen::HEART) {
-        drawHeartScreen();
-
-    }
-    else if (currentScreen == Screen::BATTERY) {
-        drawBatteryScreen();
-    }
-
+    render2DFrame(window, windowWidth, windowHeight, true);
 }
+
 
 void initClock() {
     // trenutno lokalno vreme sa sistema
@@ -1056,5 +986,77 @@ void destroyHeartCursor()
     if (g_heartCursor) {
         glfwDestroyCursor(g_heartCursor);
         g_heartCursor = nullptr;
+    }
+}
+
+void render2DFrame(GLFWwindow* window, int viewportW, int viewportH, bool handleClick) {
+    // logika
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glfwPollEvents();
+    updateClock();
+    updateBattery();
+
+    if (currentScreen == Screen::HEART) {
+        updateHeart(window);
+    }
+
+    // ESC gasi aplikaciju
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+
+    // klik strelica (stari 2D nacin)
+    if (handleClick) {
+        int mouseState = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+        bool justClicked = (mouseState == GLFW_PRESS && !leftMouseDownLastFrame);
+        leftMouseDownLastFrame = (mouseState == GLFW_PRESS);
+
+        if (justClicked) {
+            double mx, my;
+            glfwGetCursorPos(window, &mx, &my);
+
+            float mouseXndc = static_cast<float>((mx / viewportW) * 2.0 - 1.0);
+            float mouseYndc = static_cast<float>(1.0 - (my / viewportH) * 2.0);
+
+            auto inside = [&](const Button& b) {
+                return mouseXndc >= b.xMin && mouseXndc <= b.xMax &&
+                    mouseYndc >= b.yMin && mouseYndc <= b.yMax;
+                };
+
+            switch (currentScreen) {
+            case Screen::TIME:
+                if (inside(arrowRightTime)) currentScreen = Screen::HEART;
+                break;
+            case Screen::HEART:
+                if (inside(arrowLeftHeart)) currentScreen = Screen::TIME;
+                else if (inside(arrowRightHeart)) currentScreen = Screen::BATTERY;
+                break;
+            case Screen::BATTERY:
+                if (inside(arrowLeftBattery)) currentScreen = Screen::HEART;
+                break;
+            }
+        }
+    }
+
+    // render
+    glViewport(0, 0, viewportW, viewportH);
+
+    if (currentScreen == Screen::TIME) {
+        glClearColor(0.1f, 0.1f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        drawSignature(0.55f, 0.95f, -0.95f, -0.80f);
+        drawTimeDisplay();
+        drawTexturedQuad(arrowRightTexture,
+            arrowRightTime.xMin, arrowRightTime.xMax,
+            arrowRightTime.yMin, arrowRightTime.yMax);
+    }
+    else if (currentScreen == Screen::HEART) {
+        drawHeartScreen();
+    }
+    else if (currentScreen == Screen::BATTERY) {
+        drawBatteryScreen();
     }
 }
