@@ -1060,3 +1060,19 @@ void render2DFrame(GLFWwindow* window, int viewportW, int viewportH, bool handle
         drawBatteryScreen();
     }
 }
+
+void renderSignatureOverlay3D(int viewportW, int viewportH) {
+    // prebacimo viewport na ceo ekran (za svaki slučaj)
+    glViewport(0, 0, viewportW, viewportH);
+
+    // 2D overlay preko 3D
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // isti položaj kao u 2D (gornji/desni ugao)
+    drawSignature(0.55f, 0.95f, -0.95f, -0.80f);
+}
+
