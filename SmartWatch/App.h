@@ -63,4 +63,5 @@ unsigned int createShader(const char* vsSource, const char* fsSource);
 // 2D render u zadati framebuffer/viewport (koristi se za 3D varijantu: render ekrana sata u teksturu)
 // handleClick = true zadrzava staru logiku klika na strelice po NDC-u.
 void render2DFrame(GLFWwindow* window, int viewportW, int viewportH, bool handleClick);
+void renderSignatureOverlay3D(int viewportW, int viewportH);
 

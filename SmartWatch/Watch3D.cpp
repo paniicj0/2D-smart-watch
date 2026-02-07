@@ -432,19 +432,40 @@ void updateAndRender3D(GLFWwindow* window) {
     g_running = (currentScreen == Screen::HEART);
     if (g_running) {
         g_runTime += dt;
+
+        // camera bob (samo Y)
         float bob = std::sin(g_runTime * 6.5f) * 0.03f;
         g_camPos.y = g_baseCamY + bob;
 
-        float speed = 2.2f;
-        float minZ = 1e9f;
-        for (auto& s : g_ground) minZ = std::min(minZ, s.z);
+        // ---------- INFINITE GROUND ----------
+        const float speed = 2.2f;
 
+        // 1) pomeri sve segmente ka kameri (ka +Z)
         for (auto& s : g_ground) {
             s.z += speed * dt;
-            if (s.z > 1.5f) { // prošao kameru
-                s.z = minZ - GROUND_L;
-                minZ = s.z;   // ažuriraj da sledeći ode iza njega
+        }
+
+        // 2) prag kad segment "prođe" kameru (tj. izađe iz kadra ka nama)
+        // kamera ti je na g_camPos.z = 2.2, pa prag treba da bude vezan za kameru
+        const float frontLimit = g_camPos.z + (GROUND_L * 0.5f);
+
+        // 3) reset: sve što pređe frontLimit ide nazad iza najudaljenijeg segmenta
+        // (najudaljeniji "iza" je najmanji z)
+        while (true) {
+            int idx = -1;
+
+            // nađi segment koji je prešao prag
+            for (int i = 0; i < (int)g_ground.size(); ++i) {
+                if (g_ground[i].z > frontLimit) { idx = i; break; }
             }
+            if (idx == -1) break; // nema više za reciklažu
+
+            // nađi trenutno najudaljeniji iza (najmanji z)
+            float minZ = 1e9f;
+            for (auto& s : g_ground) minZ = std::min(minZ, s.z);
+
+            // prebaci ga iza svih (još jednu dužinu segmenta)
+            g_ground[idx].z = minZ - GROUND_L;
         }
 
     }
@@ -452,6 +473,7 @@ void updateAndRender3D(GLFWwindow* window) {
         g_runTime = 0.0f;
         g_camPos.y = g_baseCamY;
     }
+
 
     // smooth watch pose
     float target = g_moveFront ? 1.0f : 0.0f;
@@ -600,7 +622,9 @@ void updateAndRender3D(GLFWwindow* window) {
 
     glBindVertexArray(g_planeVAO);
     for (auto& s : g_ground) {
-        Mat4 M = mul(translate({ 0.0f, 0.0f, s.z }), scale({ 6.0f, 1.0f, GROUND_L }));
+        const float ROAD_W = 3.2f;  // NOVO
+        Mat4 M = mul(translate({ 0.0f, 0.0f, s.z }), scale({ ROAD_W, 1.0f, GROUND_L }));
+
         setMat4("uModel", M);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
@@ -617,8 +641,11 @@ void updateAndRender3D(GLFWwindow* window) {
     float runOffset = g_running ? (float)std::fmod(g_runTime * speedB, spacing) : 0.0f;
 
     // bliže putu (put je širine ~6 => ivica oko x=±3.0)
-    const float xLeft = -2.7f;
-    const float xRight = 2.7f;
+    const float ROAD_W = 3.2f;
+    const float SIDE_OFFSET = 0.55f;
+    const float xLeft = -(ROAD_W * 0.5f + SIDE_OFFSET);
+    const float xRight = (ROAD_W * 0.5f + SIDE_OFFSET);
+
 
     for (int i = 0; i < 14; ++i) {
         float z = baseZ - i * spacing + runOffset;
@@ -682,4 +709,9 @@ void updateAndRender3D(GLFWwindow* window) {
     glEnable(GL_CULL_FACE);
 
     glBindVertexArray(0);
+    // ---- signature overlay on big screen ----
+    int w, h;
+    glfwGetFramebufferSize(window, &w, &h);
+    renderSignatureOverlay3D(w, h);
+
 }
