@@ -1,11 +1,7 @@
-#pragma once
-
-// Minimal 3D math (no external deps).
-// Column-major matrices compatible with OpenGL.
-
+﻿#pragma once
 #include <cmath>
 
-struct Vec2 {
+struct Vec2 { //2d koordinata
     float x = 0.0f, y = 0.0f;
 };
 
@@ -19,21 +15,21 @@ inline Vec3 operator+(const Vec3& a, const Vec3& b) { return { a.x + b.x, a.y + 
 inline Vec3 operator-(const Vec3& a, const Vec3& b) { return { a.x - b.x, a.y - b.y, a.z - b.z }; }
 inline Vec3 operator*(const Vec3& a, float s) { return { a.x * s, a.y * s, a.z * s }; }
 
-inline float dot(const Vec3& a, const Vec3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
-inline Vec3 cross(const Vec3& a, const Vec3& b) {
+inline float dot(const Vec3& a, const Vec3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; } //vraca koliko su paralelni
+inline Vec3 cross(const Vec3& a, const Vec3& b) {//desni vektor kamere
     return { a.y * b.z - a.z * b.y,
              a.z * b.x - a.x * b.z,
              a.x * b.y - a.y * b.x };
 }
 
 inline float length(const Vec3& v) { return std::sqrt(dot(v, v)); }
-inline Vec3 normalize(const Vec3& v) {
+inline Vec3 normalize(const Vec3& v) {//pretvara vektor u jedinicni vektor (duzina 1) koji pokazuje u istom pravcu, tako sto ga podeli sa njegovom duzinom
     float len = length(v);
     if (len <= 1e-6f) return { 0,0,0 };
     return v * (1.0f / len);
 }
 
-struct Mat4 {
+struct Mat4 { //transformacije u 3D prostoru (translacija, rotacija, skaliranje, projekcija)
     // column-major: m[col*4 + row]
     float m[16] = {
         1,0,0,0,
@@ -43,7 +39,7 @@ struct Mat4 {
     };
 };
 
-inline Mat4 identity() { return Mat4{}; }
+inline Mat4 identity() { return Mat4{}; }//pocetna matrica
 
 inline Mat4 mul(const Mat4& A, const Mat4& B) {
     Mat4 R;
@@ -67,7 +63,7 @@ inline Mat4 translate(const Vec3& t) {
     return R;
 }
 
-inline Mat4 scale(const Vec3& s) {
+inline Mat4 scale(const Vec3& s) {//skaliranje po osama
     Mat4 R = identity();
     R.m[0] = s.x;
     R.m[5] = s.y;
@@ -98,7 +94,7 @@ inline Mat4 rotateZ(float rad) {
     R.m[1] = s;  R.m[5] = c;
     return R;
 }
-
+//ugao vidnog polja,sirina/visina prozora,opseg vidljivosti
 inline Mat4 perspective(float fovYRad, float aspect, float zNear, float zFar) {
     Mat4 R{};
     float f = 1.0f / std::tan(fovYRad * 0.5f);
@@ -111,7 +107,7 @@ inline Mat4 perspective(float fovYRad, float aspect, float zNear, float zFar) {
     return R;
 }
 
-inline Mat4 lookAt(const Vec3& eye, const Vec3& center, const Vec3& up) {
+inline Mat4 lookAt(const Vec3& eye, const Vec3& center, const Vec3& up) {//eye pozicija kamere
     Vec3 f = normalize(center - eye);
     Vec3 s = normalize(cross(f, up));
     Vec3 u = cross(s, f);
@@ -128,7 +124,7 @@ inline Mat4 lookAt(const Vec3& eye, const Vec3& center, const Vec3& up) {
 
 struct Vec4 { float x, y, z, w; };
 
-inline Vec4 mul(const Mat4& M, const Vec4& v) {
+inline Vec4 mul(const Mat4& M, const Vec4& v) {//transformacija vektora kroz matricu
     Vec4 r;
     r.x = M.m[0] * v.x + M.m[4] * v.y + M.m[8] * v.z + M.m[12] * v.w;
     r.y = M.m[1] * v.x + M.m[5] * v.y + M.m[9] * v.z + M.m[13] * v.w;
@@ -137,12 +133,12 @@ inline Vec4 mul(const Mat4& M, const Vec4& v) {
     return r;
 }
 
-inline float clampf(float v, float a, float b) {
+inline float clampf(float v, float a, float b) {//ogranici vrednostu opsegom [a, b]
     return v < a ? a : (v > b ? b : v);
 }
 
-inline float lerpf(float a, float b, float t) { return a + (b - a) * t; }
+inline float lerpf(float a, float b, float t) { return a + (b - a) * t; }//linearna interpolacija između a i b
 
-inline Vec3 lerp(const Vec3& a, const Vec3& b, float t) {
+inline Vec3 lerp(const Vec3& a, const Vec3& b, float t) {//glatko pomeranje sata 
     return { lerpf(a.x, b.x, t), lerpf(a.y, b.y, t), lerpf(a.z, b.z, t) };
 }

@@ -1,5 +1,5 @@
 ﻿#include "Watch3D.h"
-#include "App.h"          // render2DFrame + Screen + buttons + currentScreen
+#include "App.h"          
 #include "Math3D.h"
 
 #include <vector>
@@ -10,46 +10,40 @@
 
 #include "stb_image.h"
 
-// =====================
-//  Settings
-// =====================
 static const int   SCREEN_TEX_W = 1024;
 static const int   SCREEN_TEX_H = 1024;
 
-enum Mode { MODE_WORLD, MODE_WATCH };
+enum Mode { MODE_WORLD, MODE_WATCH }; //slobodna 3D kamera; za sat
 static Mode g_mode = MODE_WORLD;
 
-// camera
+//kamera
 static Vec3  g_camPos{ 0.0f, 0.7f, 2.2f };
-static float g_camPitch = -0.2f;   // rad
-static float g_camYaw = -1.570796f; // gleda ka -Z
+static float g_camPitch = -0.2f;   //nagib
+static float g_camYaw = -1.570796f; //gleda ka -Z
 static bool  g_firstMouse = true;
 static double g_lastMx = 0.0, g_lastMy = 0.0;
-static float g_baseCamY = 0.7f;
+static float g_baseCamY = 0.7f;//visina kamere
 
-// watch move
-static float g_watchT = 0.0f;   // 0 desno, 1 ispred
+//animacija sata
+static float g_watchT = 0.0f;//0 desno, 1 ispred
 static bool  g_moveFront = false;
 static bool  g_spaceDown = false;
 
-// running sim (samo HEART screen)
+//sim trcanja (samo HEART screen)
 static bool  g_running = false;
 static float g_runTime = 0.0f;
 
-// lighting
+//glavno svetlo
 static Vec3 g_lightDir{ 0.15f, -1.0f, 0.10f };
 static Vec3 g_lightColor{ 1.0f, 1.0f, 1.0f };
 
-// =====================
-//  GL objects
-// =====================
 static GLuint g_meshProg = 0;
 
 static GLuint g_cubeVAO = 0, g_cubeVBO = 0;
 static GLuint g_planeVAO = 0, g_planeVBO = 0;
 
 static GLuint g_groundTex = 0;
-
+//za renderovanje sata na teksturu
 static GLuint g_screenFBO = 0;
 static GLuint g_screenTex = 0;
 static GLuint g_screenDepth = 0;
@@ -57,8 +51,8 @@ static GLuint g_screenDepth = 0;
 // ground segments
 struct GroundSeg { float z; };
 static std::vector<GroundSeg> g_ground;
-static const float GROUND_L = 5.0f;
-static const int   GROUND_N = 6;
+static const float GROUND_L = 5.0f;//duzina segmenta
+static const int   GROUND_N = 6;//broj segmenata u cirkulaciji
 
 // 3D click debouncing (odvojeno od 2D)
 static bool leftMouseDownLastFrame3D = false;
@@ -67,17 +61,15 @@ static bool g_enableDepth = true;
 static bool g_enableCull = true;
 
 
-// =====================
-//  Helpers
-// =====================
 static GLuint compileFromFile(GLenum type, const char* path) {
+	//da ucitam sejder iz fajla i kompajliram ga, vracam ID sejdera
     std::ifstream file(path);
     if (!file.is_open()) {
         std::cerr << "Ne mogu da otvorim sejder: " << path << "\n";
         return 0;
     }
     std::stringstream ss;
-    ss << file.rdbuf();
+    ss << file.rdbuf();//ucitam sadrzaj u string
     std::string src = ss.str();
     const char* c = src.c_str();
 
@@ -94,6 +86,7 @@ static GLuint compileFromFile(GLenum type, const char* path) {
 }
 
 static GLuint linkProgram(const char* vsPath, const char* fsPath) {
+    //kompletan shader program
     GLuint vs = compileFromFile(GL_VERTEX_SHADER, vsPath);
     GLuint fs = compileFromFile(GL_FRAGMENT_SHADER, fsPath);
 
@@ -116,18 +109,19 @@ static GLuint linkProgram(const char* vsPath, const char* fsPath) {
 }
 
 static GLuint makeSolidTexture(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255) {
+    //ako ne uspem road.png da ucitam, onda mi je ovo zamena
     GLuint tex = 0;
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
     unsigned char px[4] = { r,g,b,a };
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, px);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);//nearest da je cista boja
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     return tex;
 }
 
 static void makeCube() {
-    // pos(3), normal(3), uv(2)
+	// kreiram kocku sa pozicijom, normalom i UV koordinatama
     const float v[] = {
         // +Z
         -0.5f,-0.5f, 0.5f,  0,0,1,  0,0,
@@ -190,14 +184,13 @@ static void makeCube() {
 }
 
 static void makePlane() {
-    // unit plane on XZ (y=0), CCW winding when viewed from +Y
+    // koristim za put i ekran sata
     const float v[] = {
-        // tri 1
         -0.5f, 0.0f, -0.5f,   0,1,0,   0,0,
          0.5f, 0.0f,  0.5f,   0,1,0,   1,1,
          0.5f, 0.0f, -0.5f,   0,1,0,   1,0,
 
-         // tri 2
+         
          -0.5f, 0.0f, -0.5f,   0,1,0,   0,0,
          -0.5f, 0.0f,  0.5f,   0,1,0,   0,1,
           0.5f, 0.0f,  0.5f,   0,1,0,   1,1,
@@ -224,6 +217,7 @@ static void makePlane() {
 
 
 static void makeScreenFBO() {
+	//ekran na satu, 2d-tekstura-3d poligon, renderujem 2D sadržaj na teksturu, pa je lepim na 3D model
     glGenFramebuffers(1, &g_screenFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, g_screenFBO);
 
@@ -245,7 +239,7 @@ static void makeScreenFBO() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-// 2D point in triangle + barycentric
+//uv koridinata klika, ako je unutar trougla abc, vraca true i baricentricne koordinate u u,v,w
 static bool barycentric(const Vec2& p, const Vec2& a, const Vec2& b, const Vec2& c, float& u, float& v, float& w) {
     float den = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y);
     if (std::fabs(den) < 1e-6f) return false;
@@ -255,9 +249,8 @@ static bool barycentric(const Vec2& p, const Vec2& a, const Vec2& b, const Vec2&
     return (u >= 0 && v >= 0 && w >= 0);
 }
 
-// mouse -> UV on projected quad for XZ plane
+//pozicija misa u uv koordinatu na 3d ekranu sata (XZ ravan), vraća false ako klik nije na ekranu
 static bool mouseToScreenUV_XZ(GLFWwindow* window, const Mat4& MVP, int winW, int winH, float& outU, float& outV) {
-    // corners for XZ plane (y=0)
     Vec4 corners[4] = {
         {-0.5f, 0.0f,-0.5f, 1.0f},
         { 0.5f, 0.0f,-0.5f, 1.0f},
@@ -294,7 +287,7 @@ static bool mouseToScreenUV_XZ(GLFWwindow* window, const Mat4& MVP, int winW, in
     }
     return false;
 }
-
+//detektuje trenutak klika, ne drzanje
 static bool justLeftClick(GLFWwindow* window) {
     int st = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
     bool just = (st == GLFW_PRESS && !leftMouseDownLastFrame3D);
@@ -304,7 +297,7 @@ static bool justLeftClick(GLFWwindow* window) {
 
 static void setMode(GLFWwindow* window, Mode m) {
     g_mode = m;
-    if (g_mode == MODE_WATCH) {
+    if (g_mode == MODE_WATCH) {//mis normalan vidi se kursor
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         g_firstMouse = true;
     }
@@ -315,6 +308,7 @@ static void setMode(GLFWwindow* window, Mode m) {
 }
 
 static GLuint loadTexture2D(const char* path, bool srgb = false) {
+	//ucita sliku i napravi teksturu sa mipmapama, repeat tilingom i linearnim filtriranjem
     int w, h, n;
     stbi_set_flip_vertically_on_load(true);
     unsigned char* data = stbi_load(path, &w, &h, &n, 0);
@@ -335,7 +329,7 @@ static GLuint loadTexture2D(const char* path, bool srgb = false) {
     glTexImage2D(GL_TEXTURE_2D, 0, internal, w, h, 0, format, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    // Ponavljanje (tiling) — važno za “beskonačan” put
+    // Ponavljanje (tiling) — vazno za “beskonacan” put
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
@@ -348,9 +342,6 @@ static GLuint loadTexture2D(const char* path, bool srgb = false) {
 }
 
 
-// =====================
-//  Public API
-// =====================
 void init3D(GLFWwindow* window, int winW, int winH) {
     (void)window; (void)winW; (void)winH;
 
@@ -364,10 +355,8 @@ void init3D(GLFWwindow* window, int winW, int winH) {
     makePlane();
     makeScreenFBO();
 
-    // ground texture (privremeno)
     g_groundTex = loadTexture2D("Resource Files/road.png", false);
     if (!g_groundTex) {
-        // fallback ako slika ne postoji
         g_groundTex = makeSolidTexture(110, 110, 110);
     }
 
@@ -376,10 +365,10 @@ void init3D(GLFWwindow* window, int winW, int winH) {
     g_ground.clear();
     for (int i = 0; i < GROUND_N; ++i) g_ground.push_back({ -i * GROUND_L });
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);//zakljuca mis
 }
 
-void cleanup3D() {
+void cleanup3D() {//da nema memory leaka
     if (g_meshProg) glDeleteProgram(g_meshProg);
     if (g_cubeVAO) glDeleteVertexArrays(1, &g_cubeVAO);
     if (g_cubeVBO) glDeleteBuffers(1, &g_cubeVBO);
@@ -392,18 +381,18 @@ void cleanup3D() {
 }
 
 void updateAndRender3D(GLFWwindow* window) {
-    // dt
+	// dt-vreme izmedju 2 frejma, za glatke animacije nezavisno od fps-a
     static double last = glfwGetTime();
     double now = glfwGetTime();
     float dt = (float)(now - last);
     last = now;
 
-    // window size
+    //velicina prozora
     int winW, winH;
     glfwGetFramebufferSize(window, &winW, &winH);
     float aspect = winH > 0 ? (float)winW / (float)winH : 1.0f;
 
-    // SPACE toggle
+	//kad kliknes space, prebacuješ se između MODE_WORLD i MODE_WATCH i pocinje animacija sata
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !g_spaceDown) {
         g_spaceDown = true;
         if (g_mode == MODE_WORLD) {
@@ -417,7 +406,7 @@ void updateAndRender3D(GLFWwindow* window) {
     }
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE) g_spaceDown = false;
 
-    // mouse pitch (world mode)
+    //cita poziciju misa, gledanje gore/dole
     if (g_mode == MODE_WORLD) {
         double mx, my; glfwGetCursorPos(window, &mx, &my);
         if (g_firstMouse) { g_lastMx = mx; g_lastMy = my; g_firstMouse = false; }
@@ -433,11 +422,10 @@ void updateAndRender3D(GLFWwindow* window) {
     if (g_running) {
         g_runTime += dt;
 
-        // camera bob (samo Y)
+        //da skakuce kamera
         float bob = std::sin(g_runTime * 6.5f) * 0.03f;
         g_camPos.y = g_baseCamY + bob;
 
-        // ---------- INFINITE GROUND ----------
         const float speed = 2.2f;
 
         // 1) pomeri sve segmente ka kameri (ka +Z)
@@ -445,8 +433,7 @@ void updateAndRender3D(GLFWwindow* window) {
             s.z += speed * dt;
         }
 
-        // 2) prag kad segment "prođe" kameru (tj. izađe iz kadra ka nama)
-        // kamera ti je na g_camPos.z = 2.2, pa prag treba da bude vezan za kameru
+        // 2) prag kad segment "prodje" kameru 
         const float frontLimit = g_camPos.z + (GROUND_L * 0.5f);
 
         // 3) reset: sve što pređe frontLimit ide nazad iza najudaljenijeg segmenta
@@ -454,13 +441,13 @@ void updateAndRender3D(GLFWwindow* window) {
         while (true) {
             int idx = -1;
 
-            // nađi segment koji je prešao prag
+            // nađi segment koji je presao prag
             for (int i = 0; i < (int)g_ground.size(); ++i) {
                 if (g_ground[i].z > frontLimit) { idx = i; break; }
             }
-            if (idx == -1) break; // nema više za reciklažu
+            if (idx == -1) break; // nema više za reciklazu
 
-            // nađi trenutno najudaljeniji iza (najmanji z)
+            // nadji trenutno najudaljeniji iza (najmanji z)
             float minZ = 1e9f;
             for (auto& s : g_ground) minZ = std::min(minZ, s.z);
 
@@ -475,31 +462,31 @@ void updateAndRender3D(GLFWwindow* window) {
     }
 
 
-    // smooth watch pose
+    //smooth pozicija sata
     float target = g_moveFront ? 1.0f : 0.0f;
     float k = 1.0f - std::exp(-6.0f * dt);
     g_watchT = lerpf(g_watchT, target, k);
 
-    // ========= 1) Render 2D watch screen to texture =========
+	//sve sto je 2D renderujem u teksturu, pa je lepim na 3D model
     glBindFramebuffer(GL_FRAMEBUFFER, g_screenFBO);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     render2DFrame(window, SCREEN_TEX_W, SCREEN_TEX_H, false);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // ========= 2) Setup camera matrices =========
+	//projekcija i view matrice
     Vec3 forward{
         std::cos(g_camYaw) * std::cos(g_camPitch),
         std::sin(g_camPitch),
         std::sin(g_camYaw) * std::cos(g_camPitch)
     };
-    forward = normalize(forward);
+    forward = normalize(forward);//pravac gledanja
     Vec3 targetPos = g_camPos + forward;
 
     Mat4 V = lookAt(g_camPos, targetPos, { 0,1,0 });
     Mat4 P = perspective(60.0f * 3.14159f / 180.0f, aspect, 0.05f, 50.0f);
 
-    // ========= 3) Scene transforms (hand+watch) =========
+	// pozicija ruke i sata u svetu, da je sat ispred i malo udesno od kamere
     Vec3 camRight = normalize(cross(forward, { 0,1,0 }));
     Vec3 camUp = cross(camRight, forward);
 
@@ -512,7 +499,7 @@ void updateAndRender3D(GLFWwindow* window) {
         mul(rotateY(g_camYaw + 3.14159f), rotateX(-0.35f))
     );
 
-    // watch body
+    //kuciste sata
     const float watchW = 0.22f;
     const float watchH = 0.12f;
     const float watchD = 0.26f;
@@ -523,28 +510,27 @@ void updateAndRender3D(GLFWwindow* window) {
             scale({ watchW, watchH, watchD }))
     );
 
-    // ===== Screen glued on top (XZ plane) =====
+    // ekran sata
     const float eps = 0.0015f; // protiv treperenja
     Mat4 Mscreen = mul(
         Mhand,
         mul(
-            translate({ 0.0f, 0.02f + watchH * 0.5f + eps, 0.0f }), // na vrh kućišta
+            translate({ 0.0f, 0.02f + watchH * 0.5f + eps, 0.0f }), // na vrh kucista
             mul(
-                rotateZ(3.14159f), // ako je naopako, probaj rotateZ(pi) umesto ovoga
+                rotateZ(3.14159f), // Z jer mi je bilo naopako
                 scale({ watchW * 0.92f, 1.0f, watchD * 0.92f })
             )
         )
     );
 
-    // screen light pos (center)
+	//pozicija svetla na ekranu sata, da je malo ispred i iznad ruke, da osvetljava ekran
     Vec4 sp = mul(Mhand, Vec4{ 0.0f, 0.03f, 0.14f, 1.0f });
     Vec3 screenLightPos{ sp.x, sp.y, sp.z };
 
-    // ========= 4) Click on arrows (MODE_WATCH only) =========
     if (g_mode == MODE_WATCH && justLeftClick(window)) {
         Mat4 MVP = mul(P, mul(V, Mscreen));
         float u, v;
-        if (mouseToScreenUV_XZ(window, MVP, winW, winH, u, v)) {
+        if (mouseToScreenUV_XZ(window, MVP, winW, winH, u, v)) {//mis na uv koor
 
             // jedan flip po V (zbog 2D koordinata)
             v = 1.0f - v;
@@ -574,7 +560,7 @@ void updateAndRender3D(GLFWwindow* window) {
         }
     }
 
-    // ========= 5) Render 3D world =========
+	// priprema za 3D rendering
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     if (g_enableDepth) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
@@ -612,7 +598,7 @@ void updateAndRender3D(GLFWwindow* window) {
     setVec3("uScreenLightColor", { 0.35f, 0.55f, 1.0f });
     glUniform1f(glGetUniformLocation(g_meshProg, "uScreenLightRadius"), 1.2f);
 
-    // ---------- ground ----------
+    //render puta
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, g_groundTex);
     glUniform1i(glGetUniformLocation(g_meshProg, "uTex0"), 0);
@@ -622,14 +608,14 @@ void updateAndRender3D(GLFWwindow* window) {
 
     glBindVertexArray(g_planeVAO);
     for (auto& s : g_ground) {
-        const float ROAD_W = 3.2f;  // NOVO
+        const float ROAD_W = 3.2f;
         Mat4 M = mul(translate({ 0.0f, 0.0f, s.z }), scale({ ROAD_W, 1.0f, GROUND_L }));
 
         setMat4("uModel", M);
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
-    // ---------- buildings ----------
+    //render zgrada
     glBindVertexArray(g_cubeVAO);
     glUniform1i(glGetUniformLocation(g_meshProg, "uUseTexture"), 0);
     glUniform1f(glGetUniformLocation(g_meshProg, "uEmissive"), 0.0f);
@@ -640,7 +626,7 @@ void updateAndRender3D(GLFWwindow* window) {
 
     float runOffset = g_running ? (float)std::fmod(g_runTime * speedB, spacing) : 0.0f;
 
-    // bliže putu (put je širine ~6 => ivica oko x=±3.0)
+    //blize putu (put je sirine ~6 => ivica oko x=±3.0)
     const float ROAD_W = 3.2f;
     const float SIDE_OFFSET = 0.55f;
     const float xLeft = -(ROAD_W * 0.5f + SIDE_OFFSET);
@@ -675,20 +661,20 @@ void updateAndRender3D(GLFWwindow* window) {
     }
 
 
-    // ---------- hand ----------
+    //ruka
     Mat4 MhandMesh = mul(Mhand, scale({ 0.16f, 0.08f, 0.55f }));
     setMat4("uModel", MhandMesh);
     glUniform3f(glGetUniformLocation(g_meshProg, "uBaseColor"), 0.72f, 0.56f, 0.45f);
     glUniform1f(glGetUniformLocation(g_meshProg, "uEmissive"), 0.0f);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    // ---------- watch body ----------
+    //sat
     setMat4("uModel", Mwatch);
     glUniform3f(glGetUniformLocation(g_meshProg, "uBaseColor"), 0.10f, 0.10f, 0.12f);
     glUniform1f(glGetUniformLocation(g_meshProg, "uEmissive"), 0.0f);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    // ---------- watch screen (textured + emissive) ----------
+	//ekran satam ekran sam emituje svetlost
     glBindVertexArray(g_planeVAO);
     setMat4("uModel", Mscreen);
 
@@ -701,7 +687,7 @@ void updateAndRender3D(GLFWwindow* window) {
 
     glDisable(GL_CULL_FACE);
 
-    // anti z-fighting:
+
     glDepthMask(GL_FALSE);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glDepthMask(GL_TRUE);
@@ -709,9 +695,9 @@ void updateAndRender3D(GLFWwindow* window) {
     glEnable(GL_CULL_FACE);
 
     glBindVertexArray(0);
-    // ---- signature overlay on big screen ----
+
     int w, h;
     glfwGetFramebufferSize(window, &w, &h);
-    renderSignatureOverlay3D(w, h);
+    renderSignatureOverlay3D(w, h);//za potpis
 
 }
